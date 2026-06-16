@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reaching the Boundary — Astral Spaces for Riemannian Optimization</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']],
+        packages: {'[+]': ['ams', 'boldsymbol']},
+        tags: 'ams',
+        macros: {
+          bm: ['{\\boldsymbol{#1}}', 1],
+          R: '{\\mathbb{R}}',
+          Exp: '{\\operatorname{Exp}}',
+          grad: '{\\operatorname{grad}}',
+          intd: '{\\operatorname{int}}'
+        }
+      },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+      startup: { typeset: true }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0A3278;
+      --navy-mid:   #1446A0;
+      --navy-light: #EBF0FC;
+      --gold:       #D2AA00;
+      --gold-light: #FDF6D8;
+      --text:       #16161E;
+      --text-muted: #52525B;
+      --text-faint: #A1A1AA;
+      --bg:         #FAFAF9;
+      --surface:    #FFFFFF;
+      --border:     #E4E4E7;
+      --border-mid: #C4C4CC;
+      --mono:       'JetBrains Mono', monospace;
+      --serif:      'Source Serif 4', Georgia, serif;
+      --sans:       'Inter', system-ui, sans-serif;
+      --radius:     6px;
+      --radius-lg:  10px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--serif);
+      font-size: 17px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      color: #fff;
+      padding: 4rem 2rem 3rem;
+      text-align: center;
+    }
+
+    header .venue {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #93B4E8;
+      margin-bottom: 1.4rem;
+    }
+
+    header h1 {
+      font-family: var(--serif);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 600;
+      line-height: 1.2;
+      max-width: 780px;
+      margin: 0 auto 1rem;
+      letter-spacing: -0.01em;
+    }
+
+    header h1 em {
+      font-style: italic;
+      color: #A8C8FF;
+    }
+
+    .authors {
+      font-family: var(--sans);
+      font-size: 1rem;
+      color: #C8D8F0;
+      margin: 1.2rem 0 0.4rem;
+    }
+
+    .authors a { color: #A8C8FF; text-decoration: none; }
+    .authors a:hover { text-decoration: underline; }
+
+    .affiliations {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      color: #8AAAD0;
+      line-height: 1.6;
+      margin-top: 0.6rem;
+    }
+
+    .header-links {
+      display: flex;
+      justify-content: center;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+
+    .header-links a {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 0.45rem 1.1rem;
+      border-radius: 100px;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-primary {
+      background: #fff;
+      color: var(--navy);
+    }
+    .btn-primary:hover { background: #EBF0FC; }
+
+    .btn-outline {
+      border: 1.5px solid rgba(255,255,255,0.35);
+      color: #fff;
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.1); }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav ul {
+      display: flex;
+      gap: 0;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      list-style: none;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    nav ul::-webkit-scrollbar { display: none; }
+
+    nav ul li a {
+      display: block;
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.8rem 0.9rem;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    nav ul li a:hover {
+      color: var(--navy);
+      border-bottom-color: var(--navy);
+    }
+
+    /* ── MAIN LAYOUT ── */
+    main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      margin-bottom: 3.5rem;
+      padding-top: 0.5rem;
+    }
+
+    section h2 {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--navy);
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--navy-light);
+    }
+
+    section p { margin-bottom: 1rem; }
+    section p:last-child { margin-bottom: 0; }
+
+    /* ── CONTRIBUTIONS LIST ── */
+    .contributions {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+
+    .contributions li {
+      display: flex;
+      gap: 0.9rem;
+      align-items: flex-start;
+      padding: 0.8rem 1rem;
+      background: var(--navy-light);
+      border-radius: var(--radius-lg);
+      border-left: 3px solid var(--navy);
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+
+    .contributions li .bullet {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #fff;
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    /* ── GEOMETRY TABLE ── */
+    .geo-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 1rem 0;
+    }
+
+    .geo-table th {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1.5px solid var(--border-mid);
+      padding: 0.5rem 1rem;
+      text-align: left;
+    }
+
+    .geo-table td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .geo-table tr:last-child td { border-bottom: none; }
+
+    .geo-table td:first-child {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--navy-mid);
+      white-space: nowrap;
+      width: 160px;
+    }
+
+    .geo-table tr:hover td { background: var(--navy-light); }
+
+    /* ── ASTRAL CASES ── */
+    .astral-cases {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin: 1.2rem 0;
+    }
+
+    .astral-case {
+      padding: 1.1rem 1.3rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .astral-case .case-label {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--navy-mid);
+      margin-bottom: 0.5rem;
+    }
+
+    .astral-case.highlight {
+      background: var(--gold-light);
+      border-color: var(--gold);
+    }
+
+    .astral-case.highlight .case-label { color: #7A5F00; }
+
+    /* ── THEOREM BLOCKS ── */
+    .theorem-block {
+      margin: 1.5rem 0;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--navy);
+    }
+
+    .theorem-header {
+      background: var(--navy);
+      color: #fff;
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      padding: 0.55rem 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .theorem-header .thm-num {
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+      padding: 0.1rem 0.45rem;
+      font-size: 0.72rem;
+    }
+
+    .theorem-body {
+      background: var(--navy-light);
+      padding: 1rem 1.2rem;
+      font-style: italic;
+      font-size: 0.95rem;
+    }
+
+    .proof-block {
+      margin-top: 0;
+      padding: 1rem 1.2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+      font-size: 0.93rem;
+    }
+
+    .proof-label {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--navy-mid);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    .proof-block p { margin-bottom: 0.8rem; }
+    .proof-block p:last-child { margin-bottom: 0; }
+
+    .qed {
+      display: inline-block;
+      float: right;
+      font-style: normal;
+      font-family: var(--sans);
+      font-size: 1rem;
+      color: var(--navy);
+    }
+
+    /* ── ALGORITHMS ── */
+    .algo-block {
+      margin: 1.2rem 0;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .algo-header {
+      background: var(--navy-light);
+      padding: 0.55rem 1.1rem;
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .algo-steps {
+      background: var(--surface);
+      padding: 1rem 1.2rem;
+      counter-reset: step;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .algo-steps li {
+      display: flex;
+      gap: 0.85rem;
+      align-items: flex-start;
+      font-size: 0.9rem;
+      counter-increment: step;
+    }
+
+    .algo-steps li::before {
+      content: counter(step);
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--navy-light);
+      border: 1.5px solid var(--navy);
+      color: var(--navy);
+      font-family: var(--sans);
+      font-size: 0.68rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 3px;
+    }
+
+    /* ── RESULTS ── */
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .result-card {
+      padding: 1.1rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .result-card h3 {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 0.5rem;
+    }
+
+    .result-card p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .result-badge {
+      display: inline-block;
+      font-family: var(--sans);
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge-navy { background: var(--navy-light); color: var(--navy); }
+    .badge-gold { background: var(--gold-light); color: #7A5F00; }
+
+    /* ── FIGURE PLACEHOLDER ── */
+    .figure-area {
+      margin: 1.5rem 0;
+      border-radius: var(--radius-lg);
+      border: 1.5px dashed var(--border-mid);
+      padding: 1.5rem;
+      text-align: center;
+      background: var(--surface);
+    }
+
+    .figure-area .fig-label {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 0.4rem;
+    }
+
+    .figure-area img {
+      max-width: 100%;
+      border-radius: var(--radius);
+    }
+
+    .figure-caption {
+      margin-top: 0.7rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── REFERENCES ── */
+    .references {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+
+    .references li {
+      display: flex;
+      gap: 0.8rem;
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .ref-num {
+      flex-shrink: 0;
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--navy);
+      background: var(--navy-light);
+      border-radius: 4px;
+      padding: 0.15rem 0.45rem;
+      height: fit-content;
+      margin-top: 2px;
+    }
+
+    /* ── CONTACT ── */
+    .contact-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .contact-item {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.7rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.9rem;
+    }
+
+    .contact-item .name {
+      font-family: var(--sans);
+      font-weight: 500;
+      min-width: 175px;
+    }
+
+    .contact-item a {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--navy-mid);
+      text-decoration: none;
+    }
+
+    .contact-item a:hover { text-decoration: underline; }
+
+    /* ── DISPLAY MATH ── */
+    .MJX-TEX { font-size: 1em !important; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--navy);
+      color: #8AAAD0;
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 1.5rem 2rem;
+    }
+
+    footer a { color: #A8C8FF; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      header { padding: 2.5rem 1.2rem 2rem; }
+      main { padding: 2rem 1.2rem 4rem; }
+      .results-grid { grid-template-columns: 1fr; }
+      .geo-table td:first-child { width: 110px; }
+      .contact-item { flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════════ -->
+<header>
+  <p class="venue">UAI 2026 &nbsp;·&nbsp; Uncertainty in Artificial Intelligence</p>
+  <h1>Reaching the Boundary:<br><em>Astral Spaces for Riemannian Optimization<br>over the Probability Simplex</em></h1>
+  <p class="authors">
+    Federico Pavesi<sup>1</sup>&ensp;·&ensp;
+    Noémie Jaquier<sup>2</sup>&ensp;·&ensp;
+    Antonio Candelieri<sup>1</sup>
+  </p>
+  <p class="affiliations">
+    <sup>1</sup> Department of Economics, Management and Statistics (DEMS), University of Milano-Bicocca, Milan, Italy<br>
+    <sup>2</sup> Department of Robotics, Perception and Learning (RPL), KTH Royal Institute of Technology, Stockholm, Sweden
+  </p>
+  <div class="header-links">
+    <a href="https://arxiv.org/abs/2603.09793" class="btn-primary">📄 arXiv Paper</a>
+    <a href="#results" class="btn-outline">Results</a>
+    <a href="#contact" class="btn-outline">Contact</a>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════════════ -->
+<nav aria-label="Page sections">
+  <ul>
+    <li><a href="#intro">Introduction</a></li>
+    <li><a href="#contributions">Contributions</a></li>
+    <li><a href="#geometry">Geometry</a></li>
+    <li><a href="#astral">Astral Extension</a></li>
+    <li><a href="#theorems">Theorems</a></li>
+    <li><a href="#algorithms">Algorithms</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#references">References</a></li>
+  </ul>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════════════ -->
+<main>
+
+  <!-- INTRODUCTION -->
+  <section id="intro">
+    <h2>Introduction &amp; Motivation</h2>
+    <p>
+      Optimizing over probability distributions naturally leads to the <strong>probability simplex</strong>
+      $$\Delta^d = \left\{ \mathbf{p} \in \mathbb{R}^{d+1}_{\geq 0} \;\middle|\; \mathbf{p}^\top \mathbf{1} = 1 \right\},$$
+      which appears in Bayesian optimization, robotics, experimental design, and mixture modelling.
+    </p>
+    <p>
+      Under the $\alpha = -1$ information geometry, optimization becomes unconstrained in tangent space.
+      However, the standard exponential map approaches the simplex boundary only <em>asymptotically</em>,
+      making boundary solutions practically unreachable in finite time.
+    </p>
+    <p>
+      We resolve this fundamental limitation using the theory of <strong>astral spaces</strong>,
+      extending both the geometry and the optimization dynamics continuously to the closed simplex $\overline{\Delta^d}$.
+    </p>
+  </section>
+
+  <!-- CONTRIBUTIONS -->
+  <section id="contributions">
+    <h2>Main Contributions</h2>
+    <ul class="contributions">
+      <li>
+        <span class="bullet">1</span>
+        <span>We extend the $\alpha=-1$ information geometry of the probability simplex to the <strong>closed simplex</strong>, including all boundary faces.</span>
+      </li>
+      <li>
+        <span class="bullet">2</span>
+        <span>We prove that the astral compactification of the tangent space is <strong>well-defined and continuous</strong>.</span>
+      </li>
+      <li>
+        <span class="bullet">3</span>
+        <span>We derive an extended exponential map $\overline{\operatorname{Exp}}^{(-1)}$ enabling <strong>Riemannian optimization directly on the boundary</strong>.</span>
+      </li>
+      <li>
+        <span class="bullet">4</span>
+        <span>We introduce <strong>Astral Riemannian Optimization</strong> and <strong>Astral $\alpha$-GaBO</strong>, a Bayesian optimization method that naturally identifies sparse, boundary-supported solutions.</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- INFORMATION GEOMETRY -->
+  <section id="geometry">
+    <h2>Information Geometry at $\alpha = -1$</h2>
+    <p>The core geometric objects for the $\alpha=-1$ exponential geometry are as follows.</p>
+
+    <table class="geo-table">
+      <thead>
+        <tr>
+          <th>Object</th>
+          <th>Definition</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Simplex</td>
+          <td>$\Delta^d = \bigl\{ \mathbf{p} \in \mathbb{R}^{d+1}_{\geq 0} \mid \mathbf{p}^\top \mathbf{1} = 1 \bigr\}$</td>
+        </tr>
+        <tr>
+          <td>Tangent space</td>
+          <td>$\mathcal{T}_{\mathbf{p}}\Delta^d = \bigl\{ \mathbf{v} \in \mathbb{R}^{d+1} \mid \mathbf{v}^\top \mathbf{p} = 0 \bigr\} \cong \mathbb{R}^d$</td>
+        </tr>
+        <tr>
+          <td>Fisher–Rao metric</td>
+          <td>$\langle \mathbf{v}, \mathbf{u} \rangle_{\mathbf{p}} = \displaystyle\sum_{i=1}^{d+1} p_i\, v_i\, u_i$</td>
+        </tr>
+        <tr>
+          <td>Natural gradient</td>
+          <td>$\operatorname{grad}_{\mathbf{p}} F = DF(\mathbf{p}) - \mathbf{p}^\top\!\left[DF(\mathbf{p})\right]\,\mathbf{p}$</td>
+        </tr>
+        <tr>
+          <td>Connection</td>
+          <td>$\nabla^{(-1)}_{\mathbf{U}}\mathbf{V}(\mathbf{p}) = \Bigl(\mathbf{p},\; D^2_{\mathbf{U}}\mathbf{V}(\mathbf{p}) + \mathbf{p}^\top\!\bigl[\mathbf{U}(\mathbf{p})\mathbf{V}(\mathbf{p})\bigr]\Bigr)$</td>
+        </tr>
+        <tr>
+          <td>Exponential map</td>
+          <td>$\operatorname{Exp}^{(-1)}_{\mathbf{p}}(\mathbf{u}) = \dfrac{\exp(\mathbf{u})}{\mathbf{p}^\top \exp(\mathbf{u})}\,\mathbf{p}$</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ASTRAL EXTENSION -->
+  <section id="astral">
+    <h2>Astral Extension of the Tangent Space</h2>
+    <p>
+      The product structure of the exponential family allows us to compactify each component of the
+      tangent space independently, yielding a tractable and geometrically natural extension.
+    </p>
+
+    <div class="astral-cases">
+      <div class="astral-case">
+        <div class="case-label">Interior &mdash; $\mathbf{p} \in \operatorname{int}\,\Delta^d$</div>
+        $$\overline{\mathcal{T}_{\mathbf{p}}\Delta^d} \;\cong\; \bigtimes_{i=1}^{d+1} \overline{\mathbb{R}}$$
+      </div>
+      <div class="astral-case">
+        <div class="case-label">Face of dimension $d-k$ &mdash; ($k$ coordinates vanish)</div>
+        $$\overline{\mathcal{T}_{\mathbf{p}}\Delta^d} \;\cong\; \bigtimes_{i=1}^{d-k+1} \overline{\mathbb{R}} \;\times\; \bigtimes_{j=1}^{k} [-\infty, 0]$$
+      </div>
+      <div class="astral-case highlight">
+        <div class="case-label">Extended exponential map</div>
+        $$\overline{\operatorname{Exp}}^{(-1)}_{\mathbf{p}}(\mathbf{u}) = \frac{\overline{\exp}(\mathbf{u})}{\mathbf{p}^\top\overline{\exp}(\mathbf{u})}\,\mathbf{p}$$
+        <p style="font-size:0.88rem; margin-top:0.6rem; color: #5C4A00;">
+          Here $\overline{\exp}$ is the extension of the exponential to $\overline{\mathbb{R}}$,
+          with the convention $\overline{\exp}(-\infty) = 0$.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- THEOREMS -->
+  <section id="theorems">
+    <h2>Theoretical Results</h2>
+
+    <!-- Theorem 1 -->
+    <div class="theorem-block">
+      <div class="theorem-header">
+        <span class="thm-num">Thm 1</span>
+        Well-definedness of the compactification
+      </div>
+      <div class="theorem-body">
+        The compactified tangent space $\overline{\mathcal{T}_{\mathbf{p}}\Delta^d}$ is well-defined
+        as an astral extension.
+      </div>
+    </div>
+
+    <div class="proof-block">
+      <div class="proof-label">Proof</div>
+      <p>
+        We must show that the astral extension of $\mathcal{T}_{\mathbf{p}}\Delta^d$ exists and is unique.
+        Observe that
+        $$\mathcal{T}_{\mathbf{p}}\Delta^d = \ker(\ell_{\mathbf{p}}),$$
+        where $\ell_{\mathbf{p}} : \mathbb{R}^{d+1} \to \mathbb{R}$ is the linear functional
+        $\ell_{\mathbf{p}}(\mathbf{v}) = \mathbf{p}^\top \mathbf{v}$.
+        Since $\ell_{\mathbf{p}}$ is linear (hence convex), Theorem 7.4 of [1] guarantees
+        that its astral extension to $\overline{\mathbb{R}}^{d+1}$ is <em>unique and continuous</em>.
+        The compactified tangent space is therefore well-defined as
+        $$\overline{\mathcal{T}_{\mathbf{p}}\Delta^d}
+          = \bigl\{ \mathbf{u} \in \overline{\mathbb{R}}^{d+1} \mid \bar{\ell}_{\mathbf{p}}(\mathbf{u}) = 0 \bigr\},$$
+        where $\bar{\ell}_{\mathbf{p}}$ denotes the astral extension of $\ell_{\mathbf{p}}$.
+        The product structure of $\overline{\mathbb{R}}^{d+1}$ yields the component-wise
+        identification stated in the theorem. <span class="qed">$\blacksquare$</span>
+      </p>
+    </div>
+
+    <br />
+
+    <!-- Theorem 2 -->
+    <div class="theorem-block">
+      <div class="theorem-header">
+        <span class="thm-num">Thm 2</span>
+        Extension of the exponential map
+      </div>
+      <div class="theorem-body">
+        The map
+        $$\overline{\operatorname{Exp}}^{(-1)}_{\mathbf{p}}(\mathbf{u})
+          = \frac{\overline{\exp}(\mathbf{u})}{\mathbf{p}^\top\overline{\exp}(\mathbf{u})}\,\mathbf{p}$$
+        is the well-defined continuous extension of the $\alpha = -1$ exponential map
+        to the closed simplex.
+      </div>
+    </div>
+
+    <div class="proof-block">
+      <div class="proof-label">Proof</div>
+      <p>
+        It suffices to show that the extended geodesics
+        $t \mapsto \overline{\operatorname{Exp}}^{(-1)}_{\mathbf{p}}(t\mathbf{u})$
+        are continuous for all $\mathbf{p} \in \overline{\Delta^d}$ and all
+        $\mathbf{u} \in \overline{\mathcal{T}_{\mathbf{p}}\Delta^d}$,
+        including directions with infinite components.
+        Decomposing component-wise, the $i$-th entry of the extended map reads
+        $$\bigl(\overline{\operatorname{Exp}}^{(-1)}_{\mathbf{p}}(\mathbf{u})\bigr)_i
+          = \frac{\overline{\exp}(u_i)\,p_i}{\mathbf{p}^\top\overline{\exp}(\mathbf{u})}.$$
+      </p>
+      <p>
+        Each factor $u_i \mapsto \overline{\exp}(u_i)$ is convex and non-decreasing on
+        $\overline{\mathbb{R}}$.
+        The denominator
+        $$\mathbf{p}^\top\overline{\exp}(\mathbf{u})
+          = \sum_{j=1}^{d+1} p_j\,\overline{\exp}(u_j)$$
+        is strictly positive: since $\mathbf{p} \in \Delta^d$ there exists at least one index $j$
+        with $p_j > 0$; the corresponding $u_j$ cannot equal $-\infty$ if $\mathbf{p}$ is in the
+        interior, and on a boundary face the constraint
+        $\mathbf{u} \in \overline{\mathcal{T}_{\mathbf{p}}\Delta^d}$ forces $u_j \in [-\infty, 0]$
+        with at least one $u_j > -\infty$, so the sum remains bounded away from zero.
+        Hence every component is continuous on $\overline{\mathcal{T}_{\mathbf{p}}\Delta^d}$,
+        and by Proposition 10.14 of [1] the full map is continuous in the astral topology.
+        Well-definedness on boundary faces follows directly from
+        $\overline{\exp}(-\infty) = 0$, which maps vanishing coordinates to zero
+        probability mass. <span class="qed">$\blacksquare$</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- ALGORITHMS -->
+  <section id="algorithms">
+    <h2>Algorithms</h2>
+
+    <div class="algo-block">
+      <div class="algo-header">Algorithm 1 &mdash; Astral Riemannian Optimization</div>
+      <ol class="algo-steps">
+        <li>Compute the Riemannian gradient $\operatorname{grad}_{\mathbf{x}_t} F$ using the Fisher–Rao metric at the current iterate $\mathbf{x}_t$.</li>
+        <li>Determine the descent direction $\mathbf{d}_t = -\eta\,\operatorname{grad}_{\mathbf{x}_t} F$ in the astral tangent space $\overline{\mathcal{T}_{\mathbf{x}_t}\Delta^d}$.</li>
+        <li>Retract via the extended exponential map: $\mathbf{x}_{t+1} = \overline{\operatorname{Exp}}^{(-1)}_{\mathbf{x}_t}(\mathbf{d}_t)$.</li>
+        <li>Set $\mathbf{x}_t \leftarrow \mathbf{x}_{t+1}$ and repeat until convergence.</li>
+      </ol>
+    </div>
+
+    <p style="font-size:0.9rem; color:var(--text-muted); margin: 0.8rem 0 1.5rem;">
+      The retraction step naturally reaches the boundary whenever the gradient direction
+      acquires an infinite astral component, making sparse boundary solutions reachable
+      in finite iterations.
+    </p>
+
+    <div class="algo-block">
+      <div class="algo-header">Algorithm 2 &mdash; Astral $\alpha$-GaBO</div>
+      <ol class="algo-steps">
+        <li>Fit a Riemannian GP surrogate on the current observation set $\mathcal{D}_t$.</li>
+        <li>Optimize the acquisition function via natural-gradient descent using $\overline{\operatorname{Exp}}^{(-1)}$ as the retraction (Algorithm 1).</li>
+        <li>Evaluate the black-box objective at the returned point $\mathbf{x}_{t+1}$ (which may lie on the boundary of $\Delta^d$).</li>
+        <li>Update $\mathcal{D}_{t+1} \leftarrow \mathcal{D}_t \cup \{(\mathbf{x}_{t+1}, f(\mathbf{x}_{t+1}))\}$ and iterate.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results">
+    <h2>Experimental Results</h2>
+    <p>
+      We validate on two complementary settings, in both cases placing the global optimum
+      on the <strong>boundary</strong> of $\Delta^d$.
+    </p>
+
+    <div class="results-grid">
+      <div class="result-card">
+        <span class="result-badge badge-navy">Convex</span>
+        <h3>Riemannian gradient descent</h3>
+        <p>Astral Riemannian gradient descent is compared against projected gradient descent
+        on differentiable convex functions with boundary optima.
+        Objective: Euclidean distance to the optimum raised to $3/10$,
+        dimensions $d = 5, 10, 20$.</p>
+      </div>
+      <div class="result-card">
+        <span class="result-badge badge-gold">Black-box</span>
+        <h3>Astral $\alpha$-GaBO</h3>
+        <p>Bayesian optimization on Ackley and Rosenbrock benchmark functions with
+        boundary optima. Convergence curves report median, $q_{25}$, and $q_{75}$
+        over 25 independent runs, in dimensions $d = 5, 10, 20$.</p>
+      </div>
+    </div>
+
+    <div class="figure-area">
+      <div class="fig-label">Figure 1 — Convex optimization</div>
+      <p style="color:var(--text-faint); font-size:0.85rem;">
+        Place <code>all_dimensions.png</code> here.
+      </p>
+      <p class="figure-caption">
+        Astral Riemannian vs. Euclidean constrained boxplots. Lower is better.
+        Astral Riemannian optimization converges significantly faster across all dimensions.
+      </p>
+    </div>
+
+    <div class="figure-area">
+      <div class="fig-label">Figure 2 — Ackley (Astral $\alpha$-GaBO)</div>
+      <p style="color:var(--text-faint); font-size:0.85rem;">
+        Place <code>Ackley_all_dims.png</code> here.
+      </p>
+      <p class="figure-caption">
+        Convergence curves for the Ackley function in dimensions $d = 5, 10, 20$.
+        Astral $\alpha$-GaBO consistently identifies the boundary optimum. Lower is better.
+      </p>
+    </div>
+
+    <div class="figure-area">
+      <div class="fig-label">Figure 3 — Rosenbrock (Astral $\alpha$-GaBO)</div>
+      <p style="color:var(--text-faint); font-size:0.85rem;">
+        Place <code>Rosenbrock_all_dims.png</code> here.
+      </p>
+      <p class="figure-caption">
+        Convergence curves for the Rosenbrock function in dimensions $d = 5, 10, 20$.
+        Lower is better.
+      </p>
+    </div>
+  </section>
+
+  <!-- REFERENCES -->
+  <section id="references">
+    <h2>References</h2>
+    <ul class="references">
+      <li>
+        <span class="ref-num">1</span>
+        <span>
+          Dudík, M., Schapire, R. E., Telgarsky, M.
+          <em>Astral space: Convex analysis at infinity.</em>
+          arXiv:2205.03260 (2025).
+        </span>
+      </li>
+      <li>
+        <span class="ref-num">2</span>
+        <span>
+          Pavesi, F., Candelieri, A., Jaquier, N.
+          <em>Information theoretic Bayesian optimization over the probability simplex.</em>
+          42nd Conference on Uncertainty in Artificial Intelligence.
+          arXiv:2603.09793 (2026).
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <h2>Contact</h2>
+    <div class="contact-grid">
+      <div class="contact-item">
+        <span class="name">Federico Pavesi</span>
+        <a href="mailto:f.pavesi11@campus.unimib.it">f.pavesi11@campus.unimib.it</a>
+      </div>
+      <div class="contact-item">
+        <span class="name">Noémie Jaquier</span>
+        <a href="mailto:jaquier@kth.se">jaquier@kth.se</a>
+      </div>
+      <div class="contact-item">
+        <span class="name">Antonio Candelieri</span>
+        <a href="mailto:antonio.candelieri@unimib.it">antonio.candelieri@unimib.it</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>
+    University of Milano-Bicocca &nbsp;·&nbsp; KTH Royal Institute of Technology
+    &nbsp;·&nbsp;
+    <a href="https://arxiv.org/abs/2603.09793">arXiv:2603.09793</a>
+  </p>
+</footer>
+
+</body>
+</html>

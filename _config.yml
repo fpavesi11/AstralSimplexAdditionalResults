@@ -1,0 +1,7 @@
+title: "Reaching the Boundary"
+description: "Astral Spaces for Riemannian Optimization over the Probability Simplex"
+theme: null
+plugins: []
+markdown: kramdown
+kramdown:
+  math_engine: mathjax
